@@ -1,4 +1,5 @@
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveDateTime};
+use clap::{Arg, ArgAction, Command};
 use std::io::{stdin, stdout, Write};
 
 fn extract(input: &String) -> Vec<u32> {
@@ -6,6 +7,26 @@ fn extract(input: &String) -> Vec<u32> {
         .split(":")
         .map(|x| x.parse::<u32>().unwrap())
         .collect();
+}
+
+fn create_time(input: &String) -> DateTime<Local> {
+    let now = Local::now();
+    let offset = now.offset();
+    let hm = extract(input);
+    let dt: NaiveDateTime;
+    match hm.len() {
+        2 => {
+            dt = NaiveDate::from_ymd(now.date().year(), now.date().month(), now.date().day())
+                .and_hms(hm[0], hm[1], 0)
+        }
+        3 => {
+            dt = NaiveDate::from_ymd(now.date().year(), now.date().month(), now.date().day())
+                .and_hms(hm[0], hm[1], hm[2])
+        }
+        _ => panic!("Invalid format.  Stop!"),
+    };
+    let res = DateTime::<Local>::from_local(dt, *offset);
+    return res;
 }
 
 fn format_duration(input: &Duration) -> String {
@@ -22,18 +43,39 @@ fn format_duration(input: &Duration) -> String {
     return res;
 }
 
+fn sanitize(input: &mut String, c: char) {
+    if c == input.chars().next_back().unwrap() {
+        input.pop();
+    }
+}
+
 fn main() {
+    let m = Command::new(env!("CARGO_PKG_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .author("Michael Lahnert <michael.lahnert@gmail.com>")
+        .arg(
+            Arg::new("starttime")
+                .short('s')
+                .help("Time when work started <HH:MM[:SS]>"),
+        )
+        .arg(
+            Arg::new("breaks")
+                .short('b')
+                .action(ArgAction::Append)
+                .help("Break start and end <HH:MM[:SS]-HH:MM[:SS]>"),
+        )
+        .get_matches();
+
     let workday = Duration::hours(7) + Duration::minutes(48); // 7.8h
     let now: DateTime<Local> = Local::now();
-    let offset = now.offset();
     let break_short = Duration::minutes(30);
     let break_large = Duration::minutes(45);
 
     // Construct Start time.  From parameter or from commandline
-    let args: Vec<String> = std::env::args().collect();
-    let start_t: Vec<u32>;
-    if args.len() == 2 {
-        start_t = extract(&args[1]);
+    let start: DateTime<Local>;
+    if let Some(start_s) = m.get_one::<String>("starttime") {
+        println!("Value for starttime: {}", start_s);
+        start = create_time(start_s);
     } else {
         let mut user_input = String::new();
         print!("Enter start time [HH:MM]: ");
@@ -41,19 +83,11 @@ fn main() {
         stdin()
             .read_line(&mut user_input)
             .expect("Bad string entered");
-        if let Some('\n') = user_input.chars().next_back() {
-            user_input.pop();
-        }
-        if let Some('\r') = user_input.chars().next_back() {
-            user_input.pop();
-        }
-        start_t = extract(&user_input);
+        sanitize(&mut user_input, '\n');
+        sanitize(&mut user_input, '\r');
+        start = create_time(&user_input);
     }
 
-    let start_dt: NaiveDateTime =
-        NaiveDate::from_ymd(now.date().year(), now.date().month(), now.date().day())
-            .and_hms(start_t[0], start_t[1], 0);
-    let start = DateTime::<Local>::from_local(start_dt, *offset);
     let total_work_time = now - start;
     let break_time = if total_work_time > (Duration::hours(9) + break_large) {
         break_large
