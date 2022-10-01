@@ -88,18 +88,18 @@ fn main() {
         start = create_time(&user_input);
     }
 
-    let total_work_time = now - start;
-    let break_time = if total_work_time > (Duration::hours(9) + break_large) {
+    let total_time = now - start;
+    let break_time = if total_time > (Duration::hours(9) + break_large) {
         break_large
     } else {
         break_short
     };
-    let work_time = total_work_time - break_time;
+    let work_time = total_time - break_time;
     let done = work_time > workday;
     let remainder = if done {
-        workday + break_short - total_work_time
+        workday + break_short - total_time
     } else {
-        total_work_time - (workday + break_short)
+        total_time - (workday + break_short)
     };
     let text_rem = if done { "more" } else { "remaining" };
     let max_dur = (start + Duration::hours(10) + break_large) - now;
