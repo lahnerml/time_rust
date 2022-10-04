@@ -1,15 +1,16 @@
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveDateTime};
 use clap::{Arg, ArgAction, Command};
 use std::io::{stdin, stdout, Write};
+use std::panic;
 
-fn extract(input: &String) -> Vec<u32> {
+fn extract(input: &str) -> Vec<u32> {
     return input
         .split(":")
         .map(|x| x.parse::<u32>().unwrap())
         .collect();
 }
 
-fn create_time(input: &String) -> DateTime<Local> {
+fn create_time(input: &str) -> DateTime<Local> {
     let now = Local::now();
     let offset = now.offset();
     let hm = extract(input);
@@ -27,6 +28,18 @@ fn create_time(input: &String) -> DateTime<Local> {
     };
     let res = DateTime::<Local>::from_local(dt, *offset);
     return res;
+}
+
+fn calculate_duration_from_string_ts(input: &String) -> Duration {
+    let times_str : Vec<&str> = input.split("-").into_iter().collect();
+    let start = create_time(times_str[0]);
+    let end = create_time(times_str[1]);
+
+    if end < start {
+        return start - end;
+    } else {
+        return end - start;
+    }
 }
 
 fn format_duration(input: &Duration) -> String {
@@ -61,6 +74,7 @@ fn main() {
         .arg(
             Arg::new("breaks")
                 .short('b')
+                .num_args(1)
                 .action(ArgAction::Append)
                 .help("Break start and end <HH:MM[:SS]-HH:MM[:SS]>"),
         )
@@ -74,7 +88,6 @@ fn main() {
     // Construct Start time.  From parameter or from commandline
     let start: DateTime<Local>;
     if let Some(start_s) = m.get_one::<String>("starttime") {
-        println!("Value for starttime: {}", start_s);
         start = create_time(start_s);
     } else {
         let mut user_input = String::new();
@@ -88,12 +101,33 @@ fn main() {
         start = create_time(&user_input);
     }
 
+    let breaks_input = m.get_many::<String>("breaks");
+    let mut breaks_s = Vec::new();
+    match breaks_input {
+        None => println!("No breaks defined, using default."),
+        Some(x) => x.for_each(|s| breaks_s.push(s)),
+    }
+
     let total_time = now - start;
-    let break_time = if total_time > (Duration::hours(9) + break_large) {
-        break_large
+    let mut break_time = Duration::seconds(0);
+    let mut longest_break_time = Duration::seconds(0);
+    if breaks_s.is_empty() {
+        break_time = if total_time > (Duration::hours(9) + break_large) {
+            break_large
+        } else {
+            break_short
+        };
     } else {
-        break_short
-    };
+        let breaks = breaks_s.iter();
+        for break_ in breaks {
+            let break_duration = calculate_duration_from_string_ts(break_);
+            if break_duration > longest_break_time {
+                longest_break_time = break_duration;
+            }
+            break_time = break_time + break_duration;
+        }
+    }
+
     let work_time = total_time - break_time;
     let done = work_time > workday;
     let remainder = if done {
@@ -118,5 +152,8 @@ fn main() {
         format_duration(&remainder),
         text_rem,
         format_duration(&max_dur)
+    );
+    println!(
+        "           total break time: {}; longest break: {}", format_duration(&break_time), format_duration(&longest_break_time)
     );
 }
