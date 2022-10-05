@@ -35,7 +35,7 @@ fn create_time(input: &str) -> DateTime<Local> {
 }
 
 fn calculate_duration_from_string_ts(input: &String) -> Duration {
-    let times_str : Vec<&str> = input.split("-").into_iter().collect();
+    let times_str: Vec<&str> = input.split("-").into_iter().collect();
     let start = create_time(times_str[0]);
     let end = create_time(times_str[1]);
 
@@ -162,6 +162,12 @@ fn main() {
         format_duration(&max_dur)
     );
     println!(
-        "           total break time: {}; longest break: {}", format_duration(&break_time), format_duration(&longest_break_time)
+        "           total break time: {}; longest break: {}",
+        format_duration(&break_time),
+        if longest_break_time == Duration::seconds(0) {
+            format_duration(&break_time)
+        } else {
+            format_duration(&longest_break_time)
+        }
     );
 }
