@@ -3,6 +3,8 @@ use clap::{Arg, ArgAction, Command};
 use std::io::{stdin, stdout, Write};
 use std::panic;
 
+/** Extract hours, minutes, and seconds from String, return as vector of u32
+ */
 fn extract(input: &str) -> Vec<u32> {
     return input
         .split(":")
@@ -10,6 +12,8 @@ fn extract(input: &str) -> Vec<u32> {
         .collect();
 }
 
+/** Create DateTime object from vector of hours, minutes, and seconds [optional] in local timezone
+ */
 fn create_time(input: &str) -> DateTime<Local> {
     let now = Local::now();
     let offset = now.offset();
@@ -42,6 +46,16 @@ fn calculate_duration_from_string_ts(input: &String) -> Duration {
     }
 }
 
+/** Sanitize stdin input, stripping trailing characters as needed
+ */
+fn sanitize_input(input: &mut String, c: char) {
+    if c == input.chars().next_back().unwrap() {
+        input.pop();
+    }
+}
+
+/** Print duration struct in a human-readable way
+ */
 fn format_duration(input: &Duration) -> String {
     let res = format!(
         "{:02}:{:02}:{:02}",
@@ -54,12 +68,6 @@ fn format_duration(input: &Duration) -> String {
             .abs()
     );
     return res;
-}
-
-fn sanitize(input: &mut String, c: char) {
-    if c == input.chars().next_back().unwrap() {
-        input.pop();
-    }
 }
 
 fn main() {
@@ -96,8 +104,8 @@ fn main() {
         stdin()
             .read_line(&mut user_input)
             .expect("Bad string entered");
-        sanitize(&mut user_input, '\n');
-        sanitize(&mut user_input, '\r');
+        sanitize_input(&mut user_input, '\n');
+        sanitize_input(&mut user_input, '\r');
         start = create_time(&user_input);
     }
 
