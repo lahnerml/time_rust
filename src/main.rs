@@ -34,6 +34,8 @@ fn create_time(input: &str) -> DateTime<Local> {
     return res;
 }
 
+/** Given two timestamps <HH:MM[:SS]>-<HH:MM[:SS]> extract the time between them and return as duration
+ */
 fn calculate_duration_from_string_ts(input: &String) -> Duration {
     let times_str: Vec<&str> = input.split("-").into_iter().collect();
     let start = create_time(times_str[0]);
