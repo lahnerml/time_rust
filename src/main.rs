@@ -152,9 +152,9 @@ fn main() {
         "[{}] start: {}; 7.8h: {}, 9h: {}, 10h: {}",
         now.format("%H:%M:%S"),
         start.time(),
-        (start + workday + break_short).time(),
-        (start + Duration::hours(9) + break_large).time(),
-        (start + Duration::hours(10) + break_large).time()
+        (start + workday + break_time).time(),
+        (start + Duration::hours(9) + break_time).time(),
+        (start + Duration::hours(10) + break_time).time()
     );
     println!(
         "           already done: {}; {} {}; no longer than {}",
