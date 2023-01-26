@@ -190,9 +190,9 @@ fn main() {
     let work_time = total_time - break_time;
     let done = work_time > workday;
     let remainder = if done {
-        workday + break_short - total_time
+        workday + break_time - total_time
     } else {
-        total_time - (workday + break_short)
+        total_time - (workday + break_time)
     };
     let text_rem = if done { "more" } else { "remaining" };
     let max_dur = (start + Duration::hours(10) + max(break_large, break_time)) - now;
