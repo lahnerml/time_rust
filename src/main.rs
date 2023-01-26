@@ -1,6 +1,5 @@
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveDateTime};
 use clap::{Arg, ArgAction, Command};
-use std::io::{stdin, stdout, Write};
 use std::panic;
 
 /** Extract hours, minutes, and seconds from String, return as vector of u32
@@ -21,16 +20,31 @@ fn create_time(input: &str) -> DateTime<Local> {
     let dt: NaiveDateTime;
     match hm.len() {
         2 => {
-            dt = NaiveDate::from_ymd(now.date().year(), now.date().month(), now.date().day())
-                .and_hms(hm[0], hm[1], 0)
+            dt = NaiveDate::from_ymd_opt(now.date_naive().year(), now.date_naive().month(), now.date_naive().day()).unwrap()
+                .and_hms_opt(hm[0], hm[1], 0).unwrap()
         }
         3 => {
-            dt = NaiveDate::from_ymd(now.date().year(), now.date().month(), now.date().day())
-                .and_hms(hm[0], hm[1], hm[2])
+            dt = NaiveDate::from_ymd_opt(now.date_naive().year(), now.date_naive().month(), now.date_naive().day()).unwrap()
+                .and_hms_opt(hm[0], hm[1], hm[2]).unwrap()
         }
         _ => panic!("Invalid format.  Stop!"),
     };
     let res = DateTime::<Local>::from_local(dt, *offset);
+    return res;
+}
+
+fn create_duration(input: &str) -> Duration {
+    let times_str: Vec<i64> = input.split(":").map(|x| x.parse::<i64>().unwrap()).collect();
+    let res: Duration;
+    match times_str.len() {
+        2 => {
+            res = Duration::hours(times_str[0]) + Duration::minutes(times_str[1]);
+        }
+        3 => {
+            res = Duration::hours(times_str[0]) + Duration::minutes(times_str[1]) + Duration::seconds(times_str[2]);
+        }
+        _ => panic!("Invalid format.  Stop!"),
+    }
     return res;
 }
 
@@ -45,14 +59,6 @@ fn calculate_duration_from_string_ts(input: &String) -> Duration {
         return start - end;
     } else {
         return end - start;
-    }
-}
-
-/** Sanitize stdin input, stripping trailing characters as needed
- */
-fn sanitize_input(input: &mut String, c: char) {
-    if c == input.chars().next_back().unwrap() {
-        input.pop();
     }
 }
 
@@ -72,6 +78,17 @@ fn format_duration(input: &Duration) -> String {
     return res;
 }
 
+fn format_duration_hours(input: &Duration) -> String {
+    let res = format!(
+        "{}.{:1}",
+        input.num_hours().abs(),
+        (*input - Duration::hours(input.num_hours()))
+        .num_minutes()
+        .abs() as f64 / 6.
+    );
+    return res;
+}
+
 fn main() {
     let m = Command::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
@@ -79,7 +96,19 @@ fn main() {
         .arg(
             Arg::new("starttime")
                 .short('s')
+                .required(true)
                 .help("Time when work started <HH:MM[:SS]>"),
+        )
+        .arg(
+            Arg::new("daily-goal")
+                .short('d')
+                .help("Daily work goal <HH:MM[:SS]>"),
+        )
+        .arg(
+            Arg::new("weekly-goal")
+                .short('w')
+                .default_value("39:00")
+                .help("Weekly work goal <HH:MM[:SS]>"),
         )
         .arg(
             Arg::new("breaks")
@@ -90,27 +119,30 @@ fn main() {
         )
         .get_matches();
 
-    let workday = Duration::hours(7) + Duration::minutes(48); // 7.8h
+    
     let now: DateTime<Local> = Local::now();
     let break_short = Duration::minutes(30);
     let break_large = Duration::minutes(45);
 
-    // Construct Start time.  From parameter or from commandline
+    // Construct Start time from commandline
     let start: DateTime<Local>;
     if let Some(start_s) = m.get_one::<String>("starttime") {
         start = create_time(start_s);
     } else {
-        let mut user_input = String::new();
-        print!("Enter start time [HH:MM]: ");
-        let _ = stdout().flush();
-        stdin()
-            .read_line(&mut user_input)
-            .expect("Bad string entered");
-        sanitize_input(&mut user_input, '\n');
-        sanitize_input(&mut user_input, '\r');
-        start = create_time(&user_input);
+        panic!("Start time not defined");
     }
 
+    // Build daily worktime goal
+    let workday: Duration;
+    if let Some(workday_s) = m.get_one::<String>("daily-goal") {
+        workday = create_duration(workday_s);
+    } else if let Some(workweek_s) = m.get_one::<String>("weekly-goal") {
+        workday = create_duration(workweek_s) / 5;
+    } else {
+        panic!("Working-hour goal undefined")
+    }
+
+    // Build breaks
     let breaks_input = m.get_many::<String>("breaks");
     let mut breaks_s = Vec::new();
     match breaks_input {
@@ -149,9 +181,10 @@ fn main() {
     let max_dur = (start + Duration::hours(10) + break_large) - now;
 
     println!(
-        "[{}] start: {}; 7.8h: {}, 9h: {}, 10h: {}",
+        "[{}] start: {}; {}h: {}, 9h: {}, 10h: {}",
         now.format("%H:%M:%S"),
         start.time(),
+        format_duration_hours(&workday),
         (start + workday + break_time).time(),
         (start + Duration::hours(9) + break_time).time(),
         (start + Duration::hours(10) + break_time).time()
