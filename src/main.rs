@@ -1,5 +1,6 @@
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveDateTime};
 use clap::{Arg, ArgAction, Command};
+use std::cmp::max;
 use std::panic;
 
 /** Extract hours, minutes, and seconds from String, return as vector of u32
@@ -195,7 +196,7 @@ fn main() {
         total_time - (workday + break_short)
     };
     let text_rem = if done { "more" } else { "remaining" };
-    let max_dur = (start + Duration::hours(10) + break_large) - now;
+    let max_dur = (start + Duration::hours(10) + max(break_large, break_time)) - now;
 
     println!(
         "[{}] start: {}; {}h: {}, 9h: {}, 10h: {}",
