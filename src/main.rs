@@ -20,12 +20,24 @@ fn create_time(input: &str) -> DateTime<Local> {
     let dt: NaiveDateTime;
     match hm.len() {
         2 => {
-            dt = NaiveDate::from_ymd_opt(now.date_naive().year(), now.date_naive().month(), now.date_naive().day()).unwrap()
-                .and_hms_opt(hm[0], hm[1], 0).unwrap()
+            dt = NaiveDate::from_ymd_opt(
+                now.date_naive().year(),
+                now.date_naive().month(),
+                now.date_naive().day(),
+            )
+            .unwrap()
+            .and_hms_opt(hm[0], hm[1], 0)
+            .unwrap()
         }
         3 => {
-            dt = NaiveDate::from_ymd_opt(now.date_naive().year(), now.date_naive().month(), now.date_naive().day()).unwrap()
-                .and_hms_opt(hm[0], hm[1], hm[2]).unwrap()
+            dt = NaiveDate::from_ymd_opt(
+                now.date_naive().year(),
+                now.date_naive().month(),
+                now.date_naive().day(),
+            )
+            .unwrap()
+            .and_hms_opt(hm[0], hm[1], hm[2])
+            .unwrap()
         }
         _ => panic!("Invalid format.  Stop!"),
     };
@@ -34,14 +46,19 @@ fn create_time(input: &str) -> DateTime<Local> {
 }
 
 fn create_duration(input: &str) -> Duration {
-    let times_str: Vec<i64> = input.split(":").map(|x| x.parse::<i64>().unwrap()).collect();
+    let times_str: Vec<i64> = input
+        .split(":")
+        .map(|x| x.parse::<i64>().unwrap())
+        .collect();
     let res: Duration;
     match times_str.len() {
         2 => {
             res = Duration::hours(times_str[0]) + Duration::minutes(times_str[1]);
         }
         3 => {
-            res = Duration::hours(times_str[0]) + Duration::minutes(times_str[1]) + Duration::seconds(times_str[2]);
+            res = Duration::hours(times_str[0])
+                + Duration::minutes(times_str[1])
+                + Duration::seconds(times_str[2]);
         }
         _ => panic!("Invalid format.  Stop!"),
     }
@@ -83,8 +100,9 @@ fn format_duration_hours(input: &Duration) -> String {
         "{}.{:1}",
         input.num_hours().abs(),
         (*input - Duration::hours(input.num_hours()))
-        .num_minutes()
-        .abs() as f64 / 6.
+            .num_minutes()
+            .abs() as f64
+            / 6.
     );
     return res;
 }
@@ -119,7 +137,6 @@ fn main() {
         )
         .get_matches();
 
-    
     let now: DateTime<Local> = Local::now();
     let break_short = Duration::minutes(30);
     let break_large = Duration::minutes(45);
