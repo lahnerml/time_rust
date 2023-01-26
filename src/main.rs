@@ -1,7 +1,6 @@
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveDateTime};
 use clap::{Arg, ArgAction, Command};
-use std::cmp::max;
-use std::panic;
+use std::{cmp::max, panic};
 
 /** Extract hours, minutes, and seconds from String, return as vector of u32
  */
@@ -204,8 +203,8 @@ fn main() {
         start.time(),
         format_duration_hours(&workday),
         (start + workday + break_time).time(),
-        (start + Duration::hours(9) + break_time).time(),
-        (start + Duration::hours(10) + break_time).time()
+        (start + Duration::hours(9) + max(break_large, break_time)).time(),
+        (start + Duration::hours(10) + max(break_large, break_time)).time()
     );
     println!(
         "           already done: {}; {} {}; no longer than {}",
