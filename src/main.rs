@@ -97,12 +97,12 @@ fn format_duration(input: &Duration) -> String {
 
 fn format_duration_hours(input: &Duration) -> String {
     let res = format!(
-        "{}.{:1}",
-        input.num_hours().abs(),
-        (*input - Duration::hours(input.num_hours()))
-            .num_minutes()
-            .abs() as f64
-            / 6.
+        "{}",
+        input.num_hours().abs() as f64
+            + (*input - Duration::hours(input.num_hours()))
+                .num_minutes()
+                .abs() as f64
+                / 60.
     );
     return res;
 }
@@ -116,6 +116,11 @@ fn main() {
                 .short('s')
                 .required(true)
                 .help("Time when work started <HH:MM[:SS]>"),
+        )
+        .arg(
+            Arg::new("endtime")
+                .short('e')
+                .help("Time when work ended <HH:MM[:SS]>"),
         )
         .arg(
             Arg::new("daily-goal")
@@ -141,10 +146,17 @@ fn main() {
     let break_short = Duration::minutes(30);
     let break_large = Duration::minutes(45);
 
-    // Construct Start time from commandline
+    // Build start and end time from commandline
     let start: DateTime<Local>;
     if let Some(start_s) = m.get_one::<String>("starttime") {
         start = create_time(start_s);
+    } else {
+        panic!("Start time not defined");
+    }
+
+    let end: DateTime<Local>;
+    if let Some(end_s) = m.get_one::<String>("endtime") {
+        end = create_time(end_s);
     } else {
         panic!("Start time not defined");
     }
@@ -167,7 +179,12 @@ fn main() {
         Some(x) => x.for_each(|s| breaks_s.push(s)),
     }
 
-    let total_time = now - start;
+    let total_time: Duration;
+    if end != DateTime::<Local>::default() {
+        total_time = end - start;
+    } else {
+        total_time = now - start;
+    }
     let mut break_time = Duration::seconds(0);
     let mut longest_break_time = Duration::seconds(0);
     if breaks_s.is_empty() {
@@ -222,4 +239,10 @@ fn main() {
             format_duration(&longest_break_time)
         }
     );
+    if end != DateTime::<Local>::default() {
+        println!(
+            "           total hours worked: {}",
+            format_duration_hours(&(total_time - break_time))
+        );
+    }
 }
