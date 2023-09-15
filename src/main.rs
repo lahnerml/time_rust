@@ -15,7 +15,7 @@ fn extract(input: &str) -> Vec<u32> {
  */
 fn create_time(input: &str) -> DateTime<Local> {
     let now = Local::now();
-    let offset = now.offset();
+    let tz = now.timezone();
     let hm = extract(input);
     let dt: NaiveDateTime;
     match hm.len() {
@@ -41,7 +41,7 @@ fn create_time(input: &str) -> DateTime<Local> {
         }
         _ => panic!("Invalid format.  Stop!"),
     };
-    let res = DateTime::<Local>::from_local(dt, *offset);
+    let res = dt.and_local_timezone(tz).single().unwrap();
     return res;
 }
 
