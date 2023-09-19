@@ -154,11 +154,9 @@ fn main() {
         panic!("Start time not defined");
     }
 
-    let end: DateTime<Local>;
+    let mut end = DateTime::<Local>::default();
     if let Some(end_s) = m.get_one::<String>("endtime") {
         end = create_time(end_s);
-    } else {
-        panic!("Start time not defined");
     }
 
     // Build daily worktime goal
