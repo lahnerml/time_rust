@@ -97,7 +97,7 @@ fn format_duration(input: &Duration) -> String {
 
 fn format_duration_hours(input: &Duration) -> String {
     let res = format!(
-        "{}",
+        "{:.2}",
         input.num_hours().abs() as f64
             + (*input - Duration::hours(input.num_hours()))
                 .num_minutes()
