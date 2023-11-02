@@ -212,10 +212,18 @@ fn main() {
     let text_rem = if done { "more" } else { "remaining" };
     let max_dur = (start + Duration::hours(10) + max(break_large, break_time)) - now;
 
+    let mut end_time_str: String = "".to_owned();
+    if end != DateTime::<Local>::default() {
+        end_time_str.push_str("end: ");
+        end_time_str.push_str(&end.time().to_string());
+        end_time_str.push_str("; ");
+    }
+
     println!(
-        "[{}] start: {}; {}h: {}, 9h: {}, 10h: {}",
+        "[{}] start: {}; {}{}h: {}, 9h: {}, 10h: {}",
         now.format("%H:%M:%S"),
         start.time(),
+        end_time_str,
         format_duration_hours(&workday),
         (start + workday + break_time).time(),
         (start + Duration::hours(9) + max(break_large, break_time)).time(),
