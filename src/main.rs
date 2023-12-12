@@ -230,9 +230,11 @@ fn main() {
         (start + Duration::hours(10) + max(break_large, break_time)).time()
     );
     println!(
-        "           already done: {}; {} {}; no longer than {}",
+        "           already done: {} [{}]; {} [{}] {}; no longer than {}",
         format_duration(&work_time),
+        format_duration_hours(&(work_time)),
         format_duration(&remainder),
+        format_duration_hours(&remainder),
         text_rem,
         format_duration(&max_dur)
     );
