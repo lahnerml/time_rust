@@ -72,11 +72,11 @@ fn calculate_duration_from_string_ts(input: &String) -> Duration {
     let start = create_time(times_str[0]);
     let end = create_time(times_str[1]);
 
-    if end < start {
-        return start - end;
+    return if end < start {
+        start - end
     } else {
-        return end - start;
-    }
+        end - start
+    };
 }
 
 /** Print duration struct in a human-readable way
@@ -95,14 +95,22 @@ fn format_duration(input: &Duration) -> String {
     return res;
 }
 
+fn round(input: f64, digit: i32) -> f64 {
+    let tmp: f64 = (input * (10_f64.powi(digit))).round();
+    return tmp / (10_f64.powi(digit));
+}
+
 fn format_duration_hours(input: &Duration) -> String {
     let res = format!(
-        "{:.2}",
-        input.num_hours().abs() as f64
-            + (*input - Duration::hours(input.num_hours()))
-                .num_minutes()
-                .abs() as f64
-                / 60.
+        "{}",
+        round(
+            input.num_hours().abs() as f64
+                + (*input - Duration::hours(input.num_hours()))
+                    .num_minutes()
+                    .abs() as f64
+                    / 60.,
+            2
+        )
     );
     return res;
 }
