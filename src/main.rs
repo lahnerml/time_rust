@@ -53,12 +53,13 @@ fn create_duration(input: &str) -> Duration {
     let res: Duration;
     match times_str.len() {
         2 => {
-            res = Duration::hours(times_str[0]) + Duration::minutes(times_str[1]);
+            res = Duration::try_hours(times_str[0]).unwrap()
+                + Duration::try_minutes(times_str[1]).unwrap();
         }
         3 => {
-            res = Duration::hours(times_str[0])
-                + Duration::minutes(times_str[1])
-                + Duration::seconds(times_str[2]);
+            res = Duration::try_hours(times_str[0]).unwrap()
+                + Duration::try_minutes(times_str[1]).unwrap()
+                + Duration::try_seconds(times_str[2]).unwrap();
         }
         _ => panic!("Invalid format.  Stop!"),
     }
@@ -85,10 +86,10 @@ fn format_duration(input: &Duration) -> String {
     let res = format!(
         "{:02}:{:02}:{:02}",
         input.num_hours().abs(),
-        (*input - Duration::hours(input.num_hours()))
+        (*input - Duration::try_hours(input.num_hours()).unwrap())
             .num_minutes()
             .abs(),
-        (*input - Duration::minutes(input.num_minutes()))
+        (*input - Duration::try_minutes(input.num_minutes()).unwrap())
             .num_seconds()
             .abs()
     );
@@ -105,7 +106,7 @@ fn format_duration_hours(input: &Duration) -> String {
         "{}",
         round(
             input.num_hours().abs() as f64
-                + (*input - Duration::hours(input.num_hours()))
+                + (*input - Duration::try_hours(input.num_hours()).unwrap())
                     .num_minutes()
                     .abs() as f64
                     / 60.,
@@ -151,8 +152,8 @@ fn main() {
         .get_matches();
 
     let now: DateTime<Local> = Local::now();
-    let break_short = Duration::minutes(30);
-    let break_large = Duration::minutes(45);
+    let break_short = Duration::try_minutes(30).unwrap();
+    let break_large = Duration::try_minutes(45).unwrap();
 
     // Build start and end time from commandline
     let start: DateTime<Local>;
@@ -191,10 +192,10 @@ fn main() {
     } else {
         total_time = now - start;
     }
-    let mut break_time = Duration::seconds(0);
-    let mut longest_break_time = Duration::seconds(0);
+    let mut break_time = Duration::try_seconds(0).unwrap();
+    let mut longest_break_time = Duration::try_seconds(0).unwrap();
     if breaks_s.is_empty() {
-        break_time = if total_time > (Duration::hours(9) + break_large) {
+        break_time = if total_time > (Duration::try_hours(9).unwrap() + break_large) {
             break_large
         } else {
             break_short
@@ -218,7 +219,7 @@ fn main() {
         total_time - (workday + break_time)
     };
     let text_rem = if done { "more" } else { "remaining" };
-    let max_dur = (start + Duration::hours(10) + max(break_large, break_time)) - now;
+    let max_dur = (start + Duration::try_hours(10).unwrap() + max(break_large, break_time)) - now;
 
     let mut end_time_str: String = "".to_owned();
     if end != DateTime::<Local>::default() {
@@ -234,8 +235,8 @@ fn main() {
         end_time_str,
         format_duration_hours(&workday),
         (start + workday + break_time).time(),
-        (start + Duration::hours(9) + max(break_large, break_time)).time(),
-        (start + Duration::hours(10) + max(break_large, break_time)).time()
+        (start + Duration::try_hours(9).unwrap() + max(break_large, break_time)).time(),
+        (start + Duration::try_hours(10).unwrap() + max(break_large, break_time)).time()
     );
     println!(
         "           already done: {} [{}]; {} [{}] {}; no longer than {} [{}]",
@@ -250,7 +251,7 @@ fn main() {
     println!(
         "           total break time: {}; longest break: {}",
         format_duration(&break_time),
-        if longest_break_time == Duration::seconds(0) {
+        if longest_break_time == Duration::try_seconds(0).unwrap() {
             format_duration(&break_time)
         } else {
             format_duration(&longest_break_time)
