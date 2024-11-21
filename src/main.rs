@@ -157,8 +157,15 @@ fn main() {
 
     // Build start and end time from commandline
     let start: DateTime<Local>;
+    let given_start: DateTime<Local>;
+    let min_start = create_time("6:00");
     if let Some(start_s) = m.get_one::<String>("starttime") {
-        start = create_time(start_s);
+        given_start = create_time(start_s);
+        start = if given_start < min_start {
+            min_start
+        } else {
+            given_start
+        };
     } else {
         panic!("Start time not defined");
     }
