@@ -1,6 +1,19 @@
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveDateTime};
 use clap::{Arg, ArgAction, Command};
+use log::{error, info};
+use env_logger::{Builder, Env};
 use std::{cmp::max, panic};
+
+/** Initialize logger from environment variables if available.
+ */
+fn init_logger() {
+    let env = Env::default()
+        .filter_or("MY_LOG_LEVEL", "trace")
+        .write_style_or("MY_LOG_STYLE", "always");
+
+    Builder::from_env(env)
+        .init();
+}
 
 /** Extract hours, minutes, and seconds from String, return as vector of u32
  */
@@ -39,7 +52,10 @@ fn create_time(input: &str) -> DateTime<Local> {
             .and_hms_opt(hm[0], hm[1], hm[2])
             .unwrap()
         }
-        _ => panic!("Invalid format.  Stop!"),
+        _ => {
+            error!("Cannot extract time from {}", input);
+            panic!("Invalid format.  Stop!");
+        }
     };
     let res = dt.and_local_timezone(tz).single().unwrap();
     return res;
@@ -61,7 +77,10 @@ fn create_duration(input: &str) -> Duration {
                 + Duration::try_minutes(times_str[1]).unwrap()
                 + Duration::try_seconds(times_str[2]).unwrap();
         }
-        _ => panic!("Invalid format.  Stop!"),
+        _ => {
+            error!("Cannot extract duration from {}", input);
+            panic!("Invalid format.  Stop!");
+        }
     }
     return res;
 }
@@ -117,6 +136,7 @@ fn format_duration_hours(input: &Duration) -> String {
 }
 
 fn main() {
+    init_logger();
     let m = Command::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .author("Michael Lahnert <michael.lahnert@gmail.com>")
@@ -162,6 +182,10 @@ fn main() {
     if let Some(start_s) = m.get_one::<String>("starttime") {
         given_start = create_time(start_s);
         start = if given_start < min_start {
+            info!("Provided start time [{}] too small.  Defaulting to {}.",
+                given_start.time(),
+                min_start.time()
+            );
             min_start
         } else {
             given_start
@@ -189,7 +213,7 @@ fn main() {
     let breaks_input = m.get_many::<String>("breaks");
     let mut breaks_s = Vec::new();
     match breaks_input {
-        None => println!("No breaks defined, using default."),
+        None => info!("No breaks defined, using default."),
         Some(x) => x.for_each(|s| breaks_s.push(s)),
     }
 
@@ -235,9 +259,8 @@ fn main() {
         end_time_str.push_str("; ");
     }
 
-    println!(
-        "[{}] start: {}; {}{}h: {}, 9h: {}, 10h: {}",
-        now.format("%H:%M:%S"),
+    info!(
+        "start: {}; {}{}h: {}, 9h: {}, 10h: {}",
         start.time(),
         end_time_str,
         format_duration_hours(&workday),
@@ -245,8 +268,8 @@ fn main() {
         (start + Duration::try_hours(9).unwrap() + max(break_large, break_time)).time(),
         (start + Duration::try_hours(10).unwrap() + max(break_large, break_time)).time()
     );
-    println!(
-        "           already done: {} [{} -> {} %]; {} [{}] {}; no longer than {} [{}]",
+    info!(
+        "already done: {} [{} -> {} %]; {} [{}] {}; no longer than {} [{}]",
         format_duration(&work_time),
         format_duration_hours(&(work_time)),
         round(
@@ -260,8 +283,8 @@ fn main() {
         format_duration(&max_dur),
         format_duration_hours(&max_dur)
     );
-    println!(
-        "           total break time: {}; longest break: {}",
+    info!(
+        "total break time: {}; longest break: {}",
         format_duration(&break_time),
         if longest_break_time == Duration::try_seconds(0).unwrap() {
             format_duration(&break_time)
@@ -270,8 +293,8 @@ fn main() {
         }
     );
     if end != DateTime::<Local>::default() {
-        println!(
-            "           total hours worked: {}",
+        info!(
+            "total hours worked: {}",
             format_duration_hours(&(total_time - break_time))
         );
     }

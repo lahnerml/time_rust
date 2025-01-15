@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 chrono = "*"
 clap = "*"
+env_logger = "*"
+log = "*"
