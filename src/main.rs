@@ -195,7 +195,7 @@ fn main() {
     let mut break_time = Duration::try_seconds(0).unwrap();
     let mut longest_break_time = Duration::try_seconds(0).unwrap();
     if breaks_s.is_empty() {
-        break_time = if total_time > (Duration::try_hours(9).unwrap() + break_large) {
+        break_time = if total_time >= (Duration::try_hours(9).unwrap() + break_short) {
             break_large
         } else {
             break_short
@@ -239,9 +239,14 @@ fn main() {
         (start + Duration::try_hours(10).unwrap() + max(break_large, break_time)).time()
     );
     println!(
-        "           already done: {} [{}]; {} [{}] {}; no longer than {} [{}]",
+        "           already done: {} [{} -> {} %]; {} [{}] {}; no longer than {} [{}]",
         format_duration(&work_time),
         format_duration_hours(&(work_time)),
+        round(
+            100.0 * (work_time.num_nanoseconds().unwrap() as f64)
+                / (workday.num_nanoseconds().unwrap() as f64),
+            2
+        ),
         format_duration(&remainder),
         format_duration_hours(&remainder),
         text_rem,
