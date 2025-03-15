@@ -1,7 +1,7 @@
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveDateTime};
 use clap::{Arg, ArgAction, Command};
-use log::{error, info};
 use env_logger::{Builder, Env};
+use log::{error, info};
 use std::{cmp::max, panic};
 
 /** Initialize logger from environment variables if available.
@@ -11,8 +11,7 @@ fn init_logger() {
         .filter_or("MY_LOG_LEVEL", "trace")
         .write_style_or("MY_LOG_STYLE", "always");
 
-    Builder::from_env(env)
-        .init();
+    Builder::from_env(env).init();
 }
 
 /** Extract hours, minutes, and seconds from String, return as vector of u32
@@ -182,7 +181,8 @@ fn main() {
     if let Some(start_s) = m.get_one::<String>("starttime") {
         given_start = create_time(start_s);
         start = if given_start < min_start {
-            info!("Provided start time [{}] too small.  Defaulting to {}.",
+            info!(
+                "Provided start time [{}] too small.  Defaulting to {}.",
                 given_start.time(),
                 min_start.time()
             );
